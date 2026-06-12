@@ -9,6 +9,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "TextSearchKit"),
-        .testTarget(name: "TextSearchKitTests", dependencies: ["TextSearchKit"]),
+.testTarget(name: "TextSearchKitTests", dependencies: ["TextSearchKit"]),
     ]
 )

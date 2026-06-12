@@ -1,132 +1,64 @@
 import UIKit
 
-// The text-search engine behind TextSearchBar: highlight, scroll-to-match,
-// and match positions for any UITextView.
-
-public extension UITextView {
-    func highlightColorsForSearchedWords(keyword: [String]) {
-        let color1 = UIColor.label
-        let color2 = self.tintColor
-        let color3 = UIColor.white
-        let base = self.text
-
-        self.attributedText = NSAttributedString(
-            base: base!,
-            keyWords: keyword,
-            foregroundColor: color1,
-            font: UIFont.preferredFont(forTextStyle: UIFont.TextStyle.body),
-            highlightForeground: color3,
-            highlighBackground: color2!,
-            alpha: 0.6)
-    }
+/// A single match occurrence within a `UITextView`.
+public struct MatchResult {
+    public let range: NSRange
 }
 
-extension NSAttributedString {
-    internal convenience init(
-        base: String,
-        keyWords: [String],
-        foregroundColor: UIColor,
-        font: UIFont,
-        highlightForeground: UIColor,
-        highlighBackground: UIColor,
-        alpha: CGFloat
-    ) {
-        let attributes = [
-            NSAttributedString.Key.font: font,
-            NSAttributedString.Key.foregroundColor: foregroundColor
-        ]
-        let baseAttributed = NSMutableAttributedString(
+private enum Constants {
+    static let highlightAlpha: CGFloat = 0.6
+}
+
+public extension UITextView {
+    func highlight(query: String, color: UIColor = .systemBlue, activeRange: NSRange? = nil) {
+        let base = text ?? ""
+        let bodyFont = UIFont.preferredFont(forTextStyle: .body)
+        let baseAttr = NSMutableAttributedString(
             string: base,
-            attributes: attributes)
+            attributes: [.font: bodyFont, .foregroundColor: UIColor.label]
+        )
 
-        let range = NSRange(location: 0, length: base.utf16.count)
+        guard !query.isEmpty else {
+            attributedText = baseAttr
+            return
+        }
 
-        for word in keyWords {
-            guard let regex = try? NSRegularExpression(pattern: word, options: .caseInsensitive) else {
-                continue
-            }
+        let pattern = NSRegularExpression.escapedPattern(for: query)
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+            attributedText = baseAttr
+            return
+        }
 
-            let attributes = [
-                NSAttributedString.Key.backgroundColor: highlighBackground.withAlphaComponent(alpha),
-                NSAttributedString.Key.foregroundColor: highlightForeground
+        let fullRange = NSRange(location: 0, length: base.utf16.count)
+        regex.matches(in: base, options: .withTransparentBounds, range: fullRange).forEach { result in
+            let isActive = activeRange.map { $0 == result.range } ?? false
+            let attrs: [NSAttributedString.Key: Any] = [
+                .backgroundColor: color.withAlphaComponent(isActive ? 1.0 : Constants.highlightAlpha),
+                .foregroundColor: UIColor.white
             ]
-
-            regex.matches(
-                in: base,
-                options: .withTransparentBounds,
-                range: range
-            ).forEach {
-                baseAttributed.addAttributes(attributes, range: $0.range)
-            }
+            baseAttr.addAttributes(attrs, range: result.range)
         }
-        self.init(attributedString: baseAttributed)
-    }
-}
-
-// MARK: - Scrolling
-
-public extension UITextView {
-    func scrollToSubstring(substring: String) {
-        let value = getFirstHighlightedWordPosition(word: substring)
-        self.setContentOffset(CGPoint(x: 0, y: 0.5), animated: true)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [self] in
-            self.setCursorPosition(value: value)
-            self.scrollToCursorPosition()
-        }
+        attributedText = baseAttr
     }
 
-    private func scrollToCursorPosition() {
-        if let cursorPosition = self.selectedTextRange?.start {
-            let rect: CGRect = self.caretRect(for: cursorPosition)
-            let point = CGPoint(x: 0, y: rect.origin.y)
-            self.setContentOffset(point, animated: true)
+    func matchPositions(for word: String) -> [MatchResult] {
+        guard !word.isEmpty, let str = text else { return [] }
+        var results = [MatchResult]()
+        var pos = str.startIndex
+        while let range = str.range(of: word, options: .caseInsensitive, range: pos..<str.endIndex) {
+            results.append(MatchResult(range: NSRange(range, in: str)))
+            pos = range.upperBound
         }
+        return results
     }
-}
 
-// MARK: - Cursor
+    func scrollToFirstMatch(of word: String) {
+        guard let first = matchPositions(for: word).first else { return }
+        scrollRangeToVisible(first.range)
+    }
 
-public extension UITextView {
     func setCursorPositionAtStart() {
-        let newPosition = self.beginningOfDocument
-        self.selectedTextRange = self.textRange(from: newPosition, to: newPosition)
-    }
-
-    private func setCursorPosition(value: Int) {
-        if let newPosition = self.position(from: self.beginningOfDocument, offset: value) {
-            self.selectedTextRange = self.textRange(from: newPosition, to: newPosition)
-        }
-    }
-}
-
-// MARK: - Match positions
-
-public extension UITextView {
-    func getEveryHighlightedWordPosition(word: String) -> [(Int, Int)] {
-        var searchedWords = [(Int, Int)]()
-        if let mystring = self.text {
-            var searchPosition = mystring.startIndex
-            while let range = mystring.range(
-                of: word,
-                options: .caseInsensitive,
-                range: searchPosition..<mystring.endIndex
-            ) {
-                let startPos = mystring.distance(from: mystring.startIndex, to: range.lowerBound)
-                let endPos = mystring.distance(from: mystring.startIndex, to: range.upperBound)
-                searchedWords.append((startPos, endPos))
-                searchPosition = range.upperBound
-            }
-        }
-        return searchedWords
-    }
-
-    private func getFirstHighlightedWordPosition(word: String) -> Int {
-        if let mystring = self.text,
-           let range = mystring.range(of: word, options: .caseInsensitive) {
-            return mystring.distance(from: mystring.startIndex, to: range.upperBound)
-        } else {
-            return 0
-        }
+        let start = beginningOfDocument
+        selectedTextRange = textRange(from: start, to: start)
     }
 }
