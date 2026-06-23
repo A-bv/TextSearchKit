@@ -68,11 +68,6 @@ public extension UITextView {
             scrollRangeToVisible(first.range)
         }
     }
-
-    func setCursorPositionAtStart() {
-        let start = beginningOfDocument
-        selectedTextRange = textRange(from: start, to: start)
-    }
 }
 
 // MARK: - Internal helpers
@@ -121,6 +116,11 @@ extension UITextView {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
         let full = NSRange(string.startIndex..., in: string)
         return regex.matches(in: string, range: full).map(\.range)
+    }
+
+    func setCursorPositionAtStart() {
+        let start = beginningOfDocument
+        selectedTextRange = textRange(from: start, to: start)
     }
 }
 
