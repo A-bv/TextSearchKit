@@ -16,13 +16,17 @@ public final class TextSearchBar: UIStackView {
         public var placeholder: String
         /// Tints the buttons and the match highlight.
         public var accentColor: UIColor
+        /// Keyboard shown for the search field. Defaults to `.default`.
+        public var keyboardType: UIKeyboardType
 
         public init(
             placeholder: String = "Search …",
-            accentColor: UIColor = .systemBlue
+            accentColor: UIColor = .systemBlue,
+            keyboardType: UIKeyboardType = .default
         ) {
             self.placeholder = placeholder
             self.accentColor = accentColor
+            self.keyboardType = keyboardType
         }
     }
 
@@ -57,7 +61,7 @@ public final class TextSearchBar: UIStackView {
         bar.placeholder = configuration.placeholder
         bar.autocorrectionType = .no
         bar.spellCheckingType = .no
-        bar.keyboardType = .twitter
+        bar.keyboardType = configuration.keyboardType
         bar.smartDashesType = .no
         bar.smartQuotesType = .no
         bar.translatesAutoresizingMaskIntoConstraints = false
@@ -94,6 +98,16 @@ public final class TextSearchBar: UIStackView {
         return btn
     }()
 
+    // Fills the leading slack so the bar's controls sit at the trailing edge.
+    // This is what lets the collapsed 🔍 expand leftward inside any full-width
+    // container, so callers don't have to add a spacer of their own.
+    private let spacer: UIView = {
+        let view = UIView()
+        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return view
+    }()
+
     /// "X of Y" counter. A plain `UILabel` — place it anywhere in your layout.
     public let resultsLabel: UILabel = {
         let label = UILabel()
@@ -121,9 +135,15 @@ public final class TextSearchBar: UIStackView {
         distribution = .fill
         translatesAutoresizingMaskIntoConstraints = false
 
-        // toggleButton is rightmost — everything else expands to its left
-        [searchField, prevButton, nextButton, lockButton, toggleButton].forEach(addArrangedSubview)
+        // spacer is leftmost, toggleButton rightmost: the bar keeps its controls
+        // at the trailing edge and grows leftward as it expands.
+        [spacer, searchField, prevButton, nextButton, lockButton, toggleButton].forEach(addArrangedSubview)
         searchField.delegate = self
+        // While expanded, the search field (not the spacer) should soak up width.
+        searchField.setContentHuggingPriority(
+            UILayoutPriority(UILayoutPriority.defaultLow.rawValue - 1),
+            for: .horizontal
+        )
 
         // Start collapsed
         searchField.isHidden = true
@@ -211,11 +231,11 @@ public final class TextSearchBar: UIStackView {
     }
 
     private func applyCurrentMatch() {
-        guard let textView, !currentMatches.isEmpty,
-              let query = searchField.text else { return }
-        let match = currentMatches[currentMatchIndex]
-        textView.highlight(query: query, color: configuration.accentColor, activeRange: match.range)
-        textView.scrollRangeToVisible(match.range)
+        guard let textView, !currentMatches.isEmpty else { return }
+        let ranges = currentMatches.map(\.range)
+        let active = currentMatches[currentMatchIndex].range
+        textView.updateActiveMatch(to: active, among: ranges, color: configuration.accentColor)
+        textView.scrollRangeToVisible(active)
         updateResultsLabel()
     }
 
@@ -318,10 +338,13 @@ extension TextSearchBar: UISearchBarDelegate {
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         guard let textView else { return }
         currentMatchIndex = 0
-        currentMatches = textView.matchPositions(for: searchText)
-        let activeRange = currentMatches.first?.range
-        textView.highlight(query: searchText, color: configuration.accentColor, activeRange: activeRange)
-        if let activeRange { textView.scrollRangeToVisible(activeRange) }
+        // One regex pass: highlight returns the ranges it applied, reused as the match set.
+        let ranges = textView.highlight(query: searchText, color: configuration.accentColor)
+        currentMatches = ranges.map(MatchResult.init)
+        if let first = ranges.first {
+            textView.updateActiveMatch(to: first, among: ranges, color: configuration.accentColor)
+            textView.scrollRangeToVisible(first)
+        }
         updateResultsLabel()
     }
 

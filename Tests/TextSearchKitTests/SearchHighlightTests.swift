@@ -108,7 +108,82 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertNoThrow(textView.highlight(query: "$10.00 ("))
     }
 
+    func testHighlight_returnsRangesConsistentWithMatchPositions() {
+        let textView = UITextView()
+        textView.text = "fox FOX Fox"
+
+        let highlighted = textView.highlight(query: "fox")
+        let counted = textView.matchPositions(for: "fox").map(\.range)
+
+        XCTAssertEqual(highlighted, counted)
+        XCTAssertEqual(highlighted.count, 3)
+    }
+
+    func testHighlight_preservesOriginalAttributesAfterClear() {
+        let textView = UITextView()
+        let font = UIFont.boldSystemFont(ofSize: 22)
+        textView.attributedText = NSAttributedString(
+            string: "keep me",
+            attributes: [.font: font, .foregroundColor: UIColor.systemRed]
+        )
+
+        textView.highlight(query: "keep", color: .systemBlue)
+        textView.highlight(query: "") // clear
+
+        let attrs = textView.attributedText.attributes(at: 0, effectiveRange: nil)
+        XCTAssertEqual(attrs[.font] as? UIFont, font)
+        XCTAssertEqual(attrs[.foregroundColor] as? UIColor, .systemRed)
+        XCTAssertNil(attrs[.backgroundColor])
+    }
+
+    func testHighlight_leavesUnrelatedAttributesIntactWhileActive() {
+        let textView = UITextView()
+        let font = UIFont.italicSystemFont(ofSize: 18)
+        textView.attributedText = NSAttributedString(string: "abc abc", attributes: [.font: font])
+
+        textView.highlight(query: "abc", color: .systemBlue)
+
+        // Font survives under the highlight; only color attributes are added.
+        let attrs = textView.attributedText.attributes(at: 0, effectiveRange: nil)
+        XCTAssertEqual(attrs[.font] as? UIFont, font)
+        XCTAssertNotNil(attrs[.backgroundColor])
+    }
+
+    func testHighlight_picksDarkTextOnLightAccent() {
+        let textView = UITextView()
+        textView.text = "abc"
+
+        textView.highlight(query: "abc", color: .systemYellow)
+        let light = textView.attributedText.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
+
+        textView.highlight(query: "abc", color: .systemBlue)
+        let dark = textView.attributedText.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
+
+        XCTAssertEqual(light, .black)
+        XCTAssertEqual(dark, .white)
+    }
+
     // MARK: - TextSearchBar
+
+    func testSearchBar_collapsed_pinsButtonToTrailingEdgeWithoutACallerSpacer() {
+        // Mirror the documented usage: the bar pinned full-width in a container.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
+        let bar = TextSearchBar()
+        bar.attach(to: UITextView())
+        container.addSubview(bar)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            bar.topAnchor.constraint(equalTo: container.topAnchor),
+            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.layoutIfNeeded()
+
+        let button = bar.arrangedSubviews.last
+        let spacer = bar.arrangedSubviews.first
+        XCTAssertEqual(button?.frame.maxX ?? 0, 320, accuracy: 1) // button sits at the right edge
+        XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)         // the bar's own spacer fills the rest
+    }
 
     func testSearchBar_beginSearch_notifiesActive() {
         let bar = TextSearchBar()

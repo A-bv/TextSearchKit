@@ -36,16 +36,9 @@ private final class PreviewViewController: UIViewController {
         view.backgroundColor = .systemBackground
         searchBar.attach(to: textView)
 
-        // Spacer pushes the bar to the trailing edge.
-        // When the bar expands, the spacer shrinks — the bar grows leftward.
-        let spacer = UIView()
-        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        let header = UIStackView(arrangedSubviews: [spacer, searchBar])
-        header.axis = .horizontal
-
-        let stack = UIStackView(arrangedSubviews: [header, textView, searchBar.resultsLabel])
+        // The bar pins itself to the trailing edge, so it can just be stacked
+        // with the text view and the results label — no spacer needed.
+        let stack = UIStackView(arrangedSubviews: [searchBar, textView, searchBar.resultsLabel])
         stack.axis = .vertical
         stack.spacing = Constants.stackSpacing
         stack.translatesAutoresizingMaskIntoConstraints = false
