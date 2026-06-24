@@ -42,6 +42,18 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertEqual(matches[1].range, NSRange(location: 3, length: 3))
     }
 
+    func testMatchPositions_usesNonOverlappingMatches() {
+        let textView = UITextView()
+        textView.text = "aaaa"
+
+        let matches = textView.matchPositions(for: "aa")
+
+        XCTAssertEqual(matches.map(\.range), [
+            NSRange(location: 0, length: 2),
+            NSRange(location: 2, length: 2),
+        ])
+    }
+
     // MARK: - highlight
 
     func testHighlight_appliesBackgroundToAllMatches() {
@@ -195,6 +207,15 @@ final class SearchHighlightTests: XCTestCase {
         bar.beginSearch()
 
         XCTAssertFalse(bar.isHidden)
+        XCTAssertEqual(active, true)
+    }
+
+    func testSearchBar_beginSearchWithoutAttachedTextViewDoesNotCrash() {
+        let bar = TextSearchBar()
+        var active: Bool?
+        bar.onActiveChange = { active = $0 }
+
+        XCTAssertNoThrow(bar.beginSearch())
         XCTAssertEqual(active, true)
     }
 

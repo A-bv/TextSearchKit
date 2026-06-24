@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
@@ -19,4 +19,4 @@ jobs:
         run: xcodebuild -scheme TextSearchKit -showdestinations
 
       - name: Test
-        run: xcodebuild test -scheme TextSearchKit -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
+        run: xcodebuild test -scheme TextSearchKit -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
