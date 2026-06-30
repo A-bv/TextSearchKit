@@ -1,0 +1,32 @@
+/* Default placeholder shown in the search field. */
+"search.placeholder" = "Search …";
+
+/* Accessibility label for the toggle button when search is closed. */
+"search.open" = "Search";
+
+/* Accessibility label for the toggle button when search is open. */
+"search.close" = "Close search";
+
+/* Accessibility label for the previous-match button. */
+"search.previous" = "Previous match";
+
+/* Accessibility label for the next-match button. */
+"search.next" = "Next match";
+
+/* Accessibility label for the lock button when editing is locked (tapping unlocks). */
+"search.unlock" = "Unlock editing";
+
+/* Accessibility label for the lock button when editing is unlocked (tapping locks). */
+"search.lock" = "Lock editing";
+
+/* Key command discoverability title to open search. */
+"search.command.find" = "Find";
+
+/* Key command discoverability title to step to the next match. */
+"search.command.next" = "Next Match";
+
+/* Key command discoverability title to step to the previous match. */
+"search.command.previous" = "Previous Match";
+
+/* Results counter, e.g. "3 of 12". %1$d is the current match, %2$d is the total. */
+"search.results" = "%1$d of %2$d";

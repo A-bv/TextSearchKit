@@ -15,8 +15,15 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Show destinations
-        run: xcodebuild -scheme TextSearchKit -showdestinations
+      - name: Pick a simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available --json \
+            | python3 -c "import sys, json; ds=json.load(sys.stdin)['devices']; \
+              cands=[d for rt in sorted(ds) if 'iOS' in rt for d in ds[rt] if d.get('isAvailable') and 'iPhone' in d['name']]; \
+              print(cands[-1]['udid'] if cands else '')")
+          if [ -z "$UDID" ]; then echo "No iOS simulator available" >&2; exit 1; fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
       - name: Test
-        run: xcodebuild test -scheme TextSearchKit -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
+        run: xcodebuild test -scheme TextSearchKit -destination "id=${{ steps.sim.outputs.udid }}"

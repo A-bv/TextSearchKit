@@ -113,6 +113,21 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertEqual(highlighted, 0)
     }
 
+    func testHighlight_whitespaceOnlyQueryHighlightsNothing() {
+        let textView = UITextView()
+        textView.text = "a b c"
+
+        let ranges = textView.highlight(query: "   ", color: .systemBlue)
+
+        XCTAssertTrue(ranges.isEmpty)
+        var highlighted = 0
+        textView.attributedText.enumerateAttribute(
+            .backgroundColor,
+            in: NSRange(location: 0, length: textView.attributedText.length)
+        ) { value, _, _ in if value != nil { highlighted += 1 } }
+        XCTAssertEqual(highlighted, 0)
+    }
+
     func testHighlight_regexSpecialCharsDoNotCrash() {
         let textView = UITextView()
         textView.text = "price $10.00 (sale)"
@@ -197,6 +212,50 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)         // the bar's own spacer fills the rest
     }
 
+    func testSearchBar_resolvesLocalizedStringsFromBundle() {
+        // If the resource bundle is misconfigured, NSLocalizedString returns the
+        // raw key ("search.open") instead of the resolved text.
+        let bar = TextSearchBar()
+        let toggle = bar.arrangedSubviews.last as? UIButton
+        XCTAssertEqual(toggle?.accessibilityLabel, "Search")
+    }
+
+    func testSearchBar_beginSearch_disablesEditingWhileActive() {
+        let bar = TextSearchBar()
+        let textView = UITextView()
+        textView.isEditable = true
+        bar.attach(to: textView)
+
+        bar.beginSearch()
+
+        XCTAssertFalse(textView.isEditable) // editing is locked during search
+    }
+
+    func testSearchBar_endSearch_restoresReadOnlyTextView() {
+        let bar = TextSearchBar()
+        let textView = UITextView()
+        textView.isEditable = false // a read-only, search-only text view
+        bar.attach(to: textView)
+
+        bar.beginSearch()
+        bar.endSearch()
+
+        // Closing search must not silently turn editing on.
+        XCTAssertFalse(textView.isEditable)
+    }
+
+    func testSearchBar_endSearch_restoresEditableTextView() {
+        let bar = TextSearchBar()
+        let textView = UITextView()
+        textView.isEditable = true
+        bar.attach(to: textView)
+
+        bar.beginSearch()
+        bar.endSearch()
+
+        XCTAssertTrue(textView.isEditable)
+    }
+
     func testSearchBar_beginSearch_notifiesActive() {
         let bar = TextSearchBar()
         let textView = UITextView()
@@ -227,9 +286,9 @@ final class SearchHighlightTests: XCTestCase {
         bar.onActiveChange = { events.append($0) }
 
         bar.beginSearch()
-        // Simulate tapping the toggle button again (endSearch is private — trigger via beginSearch guard)
-        bar.beginSearch() // should be ignored since already active
+        bar.beginSearch() // ignored: already active, so no duplicate event
+        bar.endSearch()
 
-        XCTAssertEqual(events, [true])
+        XCTAssertEqual(events, [true, false])
     }
 }

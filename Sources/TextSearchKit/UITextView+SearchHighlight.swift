@@ -111,7 +111,9 @@ extension UITextView {
     }
 
     static func matchRanges(of query: String, in string: String) -> [NSRange] {
-        guard !query.isEmpty else { return [] }
+        // A whitespace-only query would otherwise highlight every space in the
+        // document; treat it as "no search", same as an empty query.
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
         let pattern = NSRegularExpression.escapedPattern(for: query)
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
         let full = NSRange(string.startIndex..., in: string)

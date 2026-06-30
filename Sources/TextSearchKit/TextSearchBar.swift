@@ -1,5 +1,10 @@
 import UIKit
 
+/// Looks up a TextSearchKit UI string from the package's bundle.
+private func localized(_ key: String, comment: String = "") -> String {
+    NSLocalizedString(key, bundle: .module, comment: comment)
+}
+
 /// A drop-in search bar for any `UITextView`. Starts collapsed as a magnifying-glass
 /// button and expands leftward into the full search UI when tapped.
 ///
@@ -19,8 +24,11 @@ public final class TextSearchBar: UIStackView {
         /// Keyboard shown for the search field. Defaults to `.default`.
         public var keyboardType: UIKeyboardType
 
+        /// The localized default placeholder ("Search …" in English).
+        public static var defaultPlaceholder: String { localized("search.placeholder") }
+
         public init(
-            placeholder: String = "Search …",
+            placeholder: String = Configuration.defaultPlaceholder,
             accentColor: UIColor = .systemBlue,
             keyboardType: UIKeyboardType = .default
         ) {
@@ -49,7 +57,7 @@ public final class TextSearchBar: UIStackView {
         let btn = UIButton(type: .system)
         btn.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
         btn.tintColor = configuration.accentColor
-        btn.accessibilityLabel = "Search"
+        btn.accessibilityLabel = localized("search.open")
         btn.addTarget(self, action: #selector(handleToggle), for: .touchUpInside)
         btn.translatesAutoresizingMaskIntoConstraints = false
         return btn
@@ -72,7 +80,7 @@ public final class TextSearchBar: UIStackView {
         let btn = UIButton(type: .system)
         btn.setImage(UIImage(systemName: "chevron.up"), for: .normal)
         btn.tintColor = configuration.accentColor
-        btn.accessibilityLabel = "Previous match"
+        btn.accessibilityLabel = localized("search.previous")
         btn.isEnabled = false
         btn.addTarget(self, action: #selector(previousMatch), for: .touchUpInside)
         btn.translatesAutoresizingMaskIntoConstraints = false
@@ -83,7 +91,7 @@ public final class TextSearchBar: UIStackView {
         let btn = UIButton(type: .system)
         btn.setImage(UIImage(systemName: "chevron.down"), for: .normal)
         btn.tintColor = configuration.accentColor
-        btn.accessibilityLabel = "Next match"
+        btn.accessibilityLabel = localized("search.next")
         btn.isEnabled = false
         btn.addTarget(self, action: #selector(nextMatch), for: .touchUpInside)
         btn.translatesAutoresizingMaskIntoConstraints = false
@@ -92,7 +100,7 @@ public final class TextSearchBar: UIStackView {
 
     private lazy var lockButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.accessibilityLabel = "Lock editing"
+        btn.accessibilityLabel = localized("search.lock")
         btn.addTarget(self, action: #selector(toggleLock), for: .touchUpInside)
         btn.translatesAutoresizingMaskIntoConstraints = false
         return btn
@@ -120,6 +128,9 @@ public final class TextSearchBar: UIStackView {
     private weak var textView: UITextView?
     private var isActive = false
     private var isLocked = true
+    /// The text view's `isEditable` before search began, so closing search restores
+    /// it instead of unconditionally re-enabling editing on a read-only text view.
+    private var wasEditable = true
     private var currentMatches: [MatchResult] = []
     private var currentMatchIndex: Int = 0
 
@@ -181,9 +192,10 @@ public final class TextSearchBar: UIStackView {
         isActive = true
         isLocked = true
         updateLockAppearance()
+        wasEditable = textView?.isEditable ?? true
         textView?.isEditable = false
         textView?.setCursorPositionAtStart()
-        toggleButton.accessibilityLabel = "Close search"
+        toggleButton.accessibilityLabel = localized("search.close")
 
         morphIcon(to: "xmark.circle.fill")
 
@@ -210,11 +222,11 @@ public final class TextSearchBar: UIStackView {
     /// ```
     public var searchKeyCommands: [UIKeyCommand] {
         let find = UIKeyCommand(input: "f", modifierFlags: .command, action: #selector(beginSearch))
-        find.discoverabilityTitle = "Find"
+        find.discoverabilityTitle = localized("search.command.find")
         let next = UIKeyCommand(input: "g", modifierFlags: .command, action: #selector(nextMatch))
-        next.discoverabilityTitle = "Next Match"
+        next.discoverabilityTitle = localized("search.command.next")
         let prev = UIKeyCommand(input: "g", modifierFlags: [.command, .shift], action: #selector(previousMatch))
-        prev.discoverabilityTitle = "Previous Match"
+        prev.discoverabilityTitle = localized("search.command.previous")
         return [find, next, prev]
     }
 
@@ -245,17 +257,20 @@ public final class TextSearchBar: UIStackView {
         if isActive { endSearch() } else { beginSearch() }
     }
 
-    private func endSearch() {
+    /// Collapse the bar programmatically — the counterpart to `beginSearch`.
+    /// Restores the text view's editability, clears highlights, and animates closed.
+    @objc public func endSearch() {
         guard isActive else { return }
         isActive = false
         currentMatches = []
         currentMatchIndex = 0
         searchField.text = ""
         textView?.highlight(query: "", color: configuration.accentColor)
-        textView?.isEditable = true
+        textView?.isEditable = wasEditable
         isLocked = true
+        updateLockAppearance()
         resultsLabel.isHidden = true
-        toggleButton.accessibilityLabel = "Search"
+        toggleButton.accessibilityLabel = localized("search.open")
 
         morphIcon(to: "magnifyingglass")
 
@@ -293,7 +308,7 @@ public final class TextSearchBar: UIStackView {
         let tint: UIColor = isLocked ? configuration.accentColor : .secondaryLabel
         lockButton.setImage(UIImage(systemName: imageName), for: .normal)
         lockButton.tintColor = tint
-        lockButton.accessibilityLabel = isLocked ? "Unlock editing" : "Lock editing"
+        lockButton.accessibilityLabel = localized(isLocked ? "search.unlock" : "search.lock")
     }
 
     private func updateResultsLabel() {
@@ -305,7 +320,14 @@ public final class TextSearchBar: UIStackView {
             return
         }
         resultsLabel.isHidden = false
-        resultsLabel.text = "\(currentMatchIndex + 1) of \(currentMatches.count)"
+        let text = String(
+            format: localized("search.results"),
+            currentMatchIndex + 1,
+            currentMatches.count
+        )
+        resultsLabel.text = text
+        // Let VoiceOver users hear the updated position as they step through matches.
+        UIAccessibility.post(notification: .announcement, argument: text)
     }
 
     /// Spins the icon down to nothing, swaps the symbol, then springs back in.

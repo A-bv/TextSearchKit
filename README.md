@@ -79,8 +79,37 @@ override var keyCommands: [UIKeyCommand]? {
 
 ## API
 
-Use `TextSearchBar` for the full search UI. `UITextView` also exposes lower-level
-highlighting helpers if you only need match highlighting.
+### `TextSearchBar`
+
+| Member | Description |
+|---|---|
+| `init(configuration:)` | Create the bar with optional placeholder, accent color, keyboard type. |
+| `attach(to:)` | Connect the bar to a `UITextView`. Call once before adding to your layout. |
+| `beginSearch()` / `endSearch()` | Open or close the bar programmatically (e.g. from a nav-bar button). |
+| `resultsLabel` | A plain `UILabel` showing "X of Y" — place it anywhere. |
+| `searchKeyCommands` | `UIKeyCommand`s for Cmd+F / Cmd+G / Cmd+Shift+G. |
+| `onActiveChange` | Callback fired with `true` when search opens, `false` when it closes. |
+
+While search is active the text view is made non-editable; closing search restores
+its previous `isEditable` state.
+
+### `UITextView` helpers
+
+If you only need highlighting without the bar:
+
+| Member | Description |
+|---|---|
+| `highlight(query:color:activeRange:)` | Highlights every match; returns the ranges. Preserves existing attributes and restores them when cleared with an empty query. |
+| `matchPositions(for:)` | Every case-insensitive match as `[MatchResult]`. |
+| `scrollToFirstMatch(of:)` | Scrolls the first match into view. |
+
+## Limitations
+
+- Matching is **literal and case-insensitive** — not a regex search (special
+  characters are matched verbatim). Whitespace-only queries highlight nothing.
+- All UI strings (accessibility labels, key-command titles, the "X of Y" counter)
+  are localized via the package bundle. English ships by default; add an
+  `<lang>.lproj/Localizable.strings` to provide more languages.
 
 ## Test
 
