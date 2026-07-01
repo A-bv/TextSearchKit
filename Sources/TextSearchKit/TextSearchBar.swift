@@ -14,6 +14,7 @@ private func localized(_ key: String, comment: String = "") -> String {
 /// bar.attach(to: textView)
 /// // place bar and bar.resultsLabel anywhere in your layout
 /// ```
+@MainActor
 public final class TextSearchBar: UIStackView {
 
     /// Customizable strings and accent color, injectable for localization and branding.
