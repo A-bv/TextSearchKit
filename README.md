@@ -7,6 +7,8 @@
 
 Search UI for `UITextView`.
 
+![TextSearchKit demo](Docs/demo.gif)
+
 - iOS 13+
 - Swift Package Manager
 - No dependencies
