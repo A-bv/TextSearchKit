@@ -245,6 +245,22 @@ public final class TextSearchBar: UIStackView {
         applyCurrentMatch()
     }
 
+    /// Runs the search for `query` against the current text: highlights matches,
+    /// records them, and moves to the first one. Shared by live typing and by
+    /// re-locking after an edit.
+    private func runSearch(query: String) {
+        guard let textView else { return }
+        currentMatchIndex = 0
+        // One regex pass: highlight returns the ranges it applied, reused as the match set.
+        let ranges = textView.highlight(query: query, color: configuration.accentColor)
+        currentMatches = ranges.map(MatchResult.init)
+        if let first = ranges.first {
+            textView.updateActiveMatch(to: first, among: ranges, color: configuration.accentColor)
+            textView.scrollRangeToVisible(first)
+        }
+        updateResultsLabel()
+    }
+
     private func applyCurrentMatch() {
         guard let textView, !currentMatches.isEmpty else { return }
         let ranges = currentMatches.map(\.range)
@@ -298,8 +314,15 @@ public final class TextSearchBar: UIStackView {
         updateLockAppearance()
         if isLocked {
             textView?.isEditable = false
+            // Re-run the search so matches and highlights match the edited text.
+            runSearch(query: searchField.text ?? "")
             searchField.becomeFirstResponder()
         } else {
+            // Clear highlights so typed text can't pick up their colors.
+            textView?.highlight(query: "", color: configuration.accentColor)
+            currentMatches = []
+            currentMatchIndex = 0
+            updateResultsLabel()
             textView?.isEditable = true
             window?.endEditing(true)
             textView?.becomeFirstResponder()
@@ -361,16 +384,7 @@ public final class TextSearchBar: UIStackView {
 
 extension TextSearchBar: UISearchBarDelegate {
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        guard let textView else { return }
-        currentMatchIndex = 0
-        // One regex pass: highlight returns the ranges it applied, reused as the match set.
-        let ranges = textView.highlight(query: searchText, color: configuration.accentColor)
-        currentMatches = ranges.map(MatchResult.init)
-        if let first = ranges.first {
-            textView.updateActiveMatch(to: first, among: ranges, color: configuration.accentColor)
-            textView.scrollRangeToVisible(first)
-        }
-        updateResultsLabel()
+        runSearch(query: searchText)
     }
 
     public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
