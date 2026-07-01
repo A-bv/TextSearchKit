@@ -207,7 +207,10 @@ public final class TextSearchBar: UIStackView {
             }
             self.layoutIfNeeded()
         }
-        animator.addCompletion { _ in self.searchField.becomeFirstResponder() }
+        animator.addCompletion { _ in
+            guard self.isActive else { return }
+            self.searchField.becomeFirstResponder()
+        }
         animator.startAnimation()
 
         onActiveChange?(true)
