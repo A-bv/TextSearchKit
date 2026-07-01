@@ -120,10 +120,6 @@ extension UITextView {
         return regex.matches(in: string, range: full).map(\.range)
     }
 
-    func setCursorPositionAtStart() {
-        let start = beginningOfDocument
-        selectedTextRange = textRange(from: start, to: start)
-    }
 }
 
 private extension UIColor {

@@ -194,7 +194,6 @@ public final class TextSearchBar: UIStackView {
         updateLockAppearance()
         wasEditable = textView?.isEditable ?? true
         textView?.isEditable = false
-        textView?.setCursorPositionAtStart()
         toggleButton.accessibilityLabel = localized("search.close")
 
         morphIcon(to: "xmark.circle.fill")
