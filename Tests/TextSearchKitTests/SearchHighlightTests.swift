@@ -212,6 +212,19 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)         // the bar's own spacer fills the rest
     }
 
+    func testSearchBar_readOnlyTextView_keepsLockButtonHidden() {
+        let bar = TextSearchBar()
+        let textView = UITextView()
+        textView.isEditable = false
+        bar.attach(to: textView)
+
+        bar.beginSearch()
+
+        // arrangedSubviews: [spacer, searchField, prev, next, lock, toggle]
+        let lockButton = bar.arrangedSubviews[bar.arrangedSubviews.count - 2]
+        XCTAssertTrue(lockButton.isHidden)
+    }
+
     func testSearchBar_resolvesLocalizedStringsFromBundle() {
         // If the resource bundle is misconfigured, NSLocalizedString returns the
         // raw key ("search.open") instead of the resolved text.

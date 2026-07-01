@@ -199,9 +199,13 @@ public final class TextSearchBar: UIStackView {
 
         morphIcon(to: "xmark.circle.fill")
 
-        [searchField, prevButton, nextButton, lockButton].forEach { $0.alpha = 0 }
+        // The lock button turns editing on, so it only makes sense for an
+        // editable text view. Keep it hidden for read-only ones.
+        var revealed: [UIView] = [searchField, prevButton, nextButton]
+        if wasEditable { revealed.append(lockButton) }
+        revealed.forEach { $0.alpha = 0 }
         let animator = UIViewPropertyAnimator(duration: Constants.expandDuration, dampingRatio: Constants.expandDamping) {
-            [self.searchField, self.prevButton, self.nextButton, self.lockButton].forEach {
+            revealed.forEach {
                 $0.isHidden = false
                 $0.alpha = 1
             }
