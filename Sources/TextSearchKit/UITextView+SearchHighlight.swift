@@ -18,6 +18,7 @@ private enum Constants {
     static let inactiveAlpha: CGFloat = 0.6
 }
 
+@MainActor
 public extension UITextView {
 
     /// Highlights every case-insensitive occurrence of `query`, drawing `activeRange`
@@ -72,6 +73,7 @@ public extension UITextView {
 
 // MARK: - Internal helpers
 
+@MainActor
 extension UITextView {
 
     /// Re-draws which match is emphasized without recomputing matches or rebuilding
@@ -110,7 +112,9 @@ extension UITextView {
         storage.endEditing()
     }
 
-    static func matchRanges(of query: String, in string: String) -> [NSRange] {
+    // Pure string work with no UIKit access, so it stays off the main actor
+    // and can run anywhere.
+    nonisolated static func matchRanges(of query: String, in string: String) -> [NSRange] {
         // A whitespace-only query would otherwise highlight every space in the
         // document; treat it as "no search", same as an empty query.
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
