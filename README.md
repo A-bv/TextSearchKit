@@ -9,6 +9,8 @@ Search UI for `UITextView`.
 
 ![TextSearchKit demo](Docs/demo.gif)
 
+<sub>Rendered preview generated from the package — no system keyboard. [How it's made](Docs/demo-gif.md).</sub>
+
 - iOS 13+
 - Swift Package Manager
 - No dependencies
@@ -113,15 +115,17 @@ If you only need highlighting without the bar:
   are localized via the package bundle. English ships by default; add an
   `<lang>.lproj/Localizable.strings` to provide more languages.
 
-## Test
+## Building & testing
+
+TextSearchKit is iOS-only (UIKit), so `swift build` / `swift test` fail on macOS
+with `no such module 'UIKit'`. Build and test against an iOS simulator instead:
 
 ```sh
-xcodebuild test -scheme TextSearchKit -destination 'platform=iOS Simulator,name=<device>'
+xcodebuild test -scheme TextSearchKit \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-## Demo
-
-See [Docs/demo-gif.md](Docs/demo-gif.md).
+Substitute any installed simulator from `xcrun simctl list devices available`.
 
 ## License
 
