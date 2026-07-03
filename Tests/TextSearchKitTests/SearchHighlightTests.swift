@@ -304,4 +304,93 @@ final class SearchHighlightTests: XCTestCase {
 
         XCTAssertEqual(events, [true, false])
     }
+
+    // MARK: - TextSearchBar navigation & lock cycle
+
+    /// Attaches a bar to a text view and drives its real search path for `query`,
+    /// returning the pieces a test needs. `field` is the bar's own search bar, so
+    /// its text feeds the "X of Y" counter exactly as live typing would.
+    private func startSearch(text: String, query: String) -> (bar: TextSearchBar, textView: UITextView, field: UISearchBar) {
+        let bar = TextSearchBar()
+        let textView = UITextView()
+        textView.text = text
+        bar.attach(to: textView)
+        bar.beginSearch()
+        let field = bar.arrangedSubviews[1] as! UISearchBar
+        field.text = query
+        bar.searchBar(field, textDidChange: query)
+        return (bar, textView, field)
+    }
+
+    /// Background-highlight opacity at a range: 1.0 = active match, dimmed = inactive.
+    private func backgroundAlpha(in textView: UITextView, at range: NSRange) -> CGFloat {
+        guard let color = textView.attributedText.attribute(.backgroundColor, at: range.location, effectiveRange: nil) as? UIColor else {
+            return 0
+        }
+        var alpha: CGFloat = 0
+        color.getRed(nil, green: nil, blue: nil, alpha: &alpha)
+        return alpha
+    }
+
+    private func highlightedRangeCount(in textView: UITextView) -> Int {
+        var count = 0
+        textView.attributedText.enumerateAttribute(
+            .backgroundColor,
+            in: NSRange(location: 0, length: textView.attributedText.length)
+        ) { value, _, _ in if value != nil { count += 1 } }
+        return count
+    }
+
+    func testSearchBar_nextMatch_advancesWrapsAndMovesActiveHighlight() {
+        let (bar, textView, _) = startSearch(text: "cat cat cat", query: "cat")
+        let ranges = textView.matchPositions(for: "cat").map(\.range)
+        XCTAssertEqual(bar.resultsLabel.text, "1 of 3")
+
+        bar.nextMatch()
+        XCTAssertEqual(bar.resultsLabel.text, "2 of 3")
+        XCTAssertEqual(backgroundAlpha(in: textView, at: ranges[1]), 1.0, accuracy: 0.01)
+        XCTAssertLessThan(backgroundAlpha(in: textView, at: ranges[0]), 1.0)
+
+        bar.nextMatch()
+        XCTAssertEqual(bar.resultsLabel.text, "3 of 3")
+
+        bar.nextMatch() // wraps back to the first match
+        XCTAssertEqual(bar.resultsLabel.text, "1 of 3")
+        XCTAssertEqual(backgroundAlpha(in: textView, at: ranges[0]), 1.0, accuracy: 0.01)
+    }
+
+    func testSearchBar_previousMatch_wrapsBackward() {
+        let (bar, _, _) = startSearch(text: "cat cat cat", query: "cat")
+        XCTAssertEqual(bar.resultsLabel.text, "1 of 3")
+
+        bar.previousMatch() // wraps to the last match
+        XCTAssertEqual(bar.resultsLabel.text, "3 of 3")
+    }
+
+    func testSearchBar_noMatches_hidesCounterAndDisablesNavigation() {
+        let (bar, _, _) = startSearch(text: "cat cat", query: "zzz")
+
+        XCTAssertTrue(bar.resultsLabel.isHidden)
+        let prev = bar.arrangedSubviews[2] as? UIButton
+        let next = bar.arrangedSubviews[3] as? UIButton
+        XCTAssertEqual(prev?.isEnabled, false)
+        XCTAssertEqual(next?.isEnabled, false)
+    }
+
+    func testSearchBar_unlockClearsHighlights_relockReappliesSearch() {
+        let (bar, textView, _) = startSearch(text: "cat cat", query: "cat")
+        XCTAssertEqual(bar.resultsLabel.text, "1 of 2")
+        XCTAssertFalse(textView.isEditable)              // locked while searching
+        XCTAssertEqual(highlightedRangeCount(in: textView), 2)
+
+        bar.toggleLock()                                 // unlock -> edit
+        XCTAssertTrue(textView.isEditable)
+        XCTAssertEqual(highlightedRangeCount(in: textView), 0) // highlights cleared for editing
+        XCTAssertTrue(bar.resultsLabel.isHidden)
+
+        bar.toggleLock()                                 // lock -> search again
+        XCTAssertFalse(textView.isEditable)
+        XCTAssertEqual(highlightedRangeCount(in: textView), 2) // re-applied against current text
+        XCTAssertEqual(bar.resultsLabel.text, "1 of 2")
+    }
 }

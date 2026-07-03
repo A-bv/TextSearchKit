@@ -313,7 +313,8 @@ public final class TextSearchBar: UIStackView {
         window?.endEditing(true)
     }
 
-    @objc private func toggleLock() {
+    // Internal (not private) so tests can drive the lock cycle via @testable.
+    @objc func toggleLock() {
         isLocked.toggle()
         updateLockAppearance()
         if isLocked {
