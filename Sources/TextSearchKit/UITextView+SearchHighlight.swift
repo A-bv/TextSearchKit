@@ -28,6 +28,10 @@ public extension UITextView {
     /// are preserved: only matched ranges are touched, and clearing the highlight
     /// (an empty `query`) restores their original styling exactly.
     ///
+    /// Highlights are applied directly to the text view's `textStorage`. Clear
+    /// them with an empty `query` before mutating the text; editing while
+    /// highlighted can leave stale ranges. `TextSearchBar` does this for you.
+    ///
     /// - Returns: the range of every match, in document order.
     @discardableResult
     func highlight(query: String, color: UIColor = .systemBlue, activeRange: NSRange? = nil) -> [NSRange] {

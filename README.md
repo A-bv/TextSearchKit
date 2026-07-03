@@ -114,6 +114,10 @@ If you only need highlighting without the bar:
 - All UI strings (accessibility labels, key-command titles, the "X of Y" counter)
   are localized via the package bundle. English ships by default; add an
   `<lang>.lproj/Localizable.strings` to provide more languages.
+- The `UITextView` highlight helpers write directly to the text view's storage.
+  Clear the highlight (empty query) before mutating the text — editing while
+  highlighted can leave stale ranges. `TextSearchBar` handles this for you by
+  locking editing during search.
 
 ## Building & testing
 
