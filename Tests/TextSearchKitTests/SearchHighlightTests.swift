@@ -54,6 +54,31 @@ final class SearchHighlightTests: XCTestCase {
         ])
     }
 
+    // MARK: - scrollToFirstMatch
+
+    func testScrollToFirstMatch_scrollsMatchNearTheEndIntoView() {
+        // A tall document in a short viewport: the first (only) match sits far
+        // below the fold, so scrolling to it must move the content offset down.
+        let textView = UITextView(frame: CGRect(x: 0, y: 0, width: 200, height: 100))
+        textView.text = String(repeating: "filler line\n", count: 200) + "needle"
+        textView.layoutIfNeeded()
+        XCTAssertEqual(textView.contentOffset.y, 0, accuracy: 0.5) // starts at the top
+
+        textView.scrollToFirstMatch(of: "needle")
+
+        XCTAssertGreaterThan(textView.contentOffset.y, 0) // scrolled down to reveal the match
+    }
+
+    func testScrollToFirstMatch_noMatch_isASafeNoOp() {
+        let textView = UITextView(frame: CGRect(x: 0, y: 0, width: 200, height: 100))
+        textView.text = String(repeating: "filler line\n", count: 200)
+        textView.layoutIfNeeded()
+        let before = textView.contentOffset
+
+        XCTAssertNoThrow(textView.scrollToFirstMatch(of: "zzz")) // no such match
+        XCTAssertEqual(textView.contentOffset, before)           // nothing moved
+    }
+
     // MARK: - highlight
 
     func testHighlight_appliesBackgroundToAllMatches() {
