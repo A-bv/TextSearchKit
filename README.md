@@ -32,7 +32,7 @@ Use Swift Package Manager:
 [A-bv/TextSearchKit.git](https://github.com/A-bv/TextSearchKit.git)
 
 ```swift
-.package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.2.0")
+.package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.3.0")
 ```
 
 ## Usage
