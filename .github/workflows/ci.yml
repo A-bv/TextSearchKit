@@ -27,3 +27,10 @@ jobs:
 
       - name: Test
         run: xcodebuild test -scheme TextSearchKit -destination "id=${{ steps.sim.outputs.udid }}"
+
+      # The package ships a Swift 5.9 floor (broad consumer compatibility), but the
+      # code is written to be clean under Swift 6's strict concurrency checking.
+      # This compiles the library and tests in Swift 6 language mode so any future
+      # concurrency regression fails here as a hard error — without raising the floor.
+      - name: Compile under Swift 6 language mode
+        run: xcodebuild build-for-testing -scheme TextSearchKit -destination "id=${{ steps.sim.outputs.udid }}" SWIFT_VERSION=6
