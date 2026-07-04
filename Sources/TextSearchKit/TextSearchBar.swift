@@ -55,10 +55,15 @@ public final class TextSearchBar: UIStackView {
 
     private let configuration: Configuration
 
+    /// A symbol image sized to the body text style, so control glyphs track Dynamic Type.
+    private static func symbolImage(_ name: String) -> UIImage? {
+        UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(textStyle: .body))
+    }
+
     // Always-visible toggle: magnifyingglass when idle, xmark.circle.fill when active
     private lazy var toggleButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
+        btn.setImage(Self.symbolImage("magnifyingglass"), for: .normal)
         btn.tintColor = configuration.accentColor
         btn.accessibilityLabel = localized("search.open")
         btn.addTarget(self, action: #selector(handleToggle), for: .touchUpInside)
@@ -81,7 +86,7 @@ public final class TextSearchBar: UIStackView {
 
     private lazy var prevButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.up"), for: .normal)
+        btn.setImage(Self.symbolImage("chevron.up"), for: .normal)
         btn.tintColor = configuration.accentColor
         btn.accessibilityLabel = localized("search.previous")
         btn.isEnabled = false
@@ -92,7 +97,7 @@ public final class TextSearchBar: UIStackView {
 
     private lazy var nextButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.down"), for: .normal)
+        btn.setImage(Self.symbolImage("chevron.down"), for: .normal)
         btn.tintColor = configuration.accentColor
         btn.accessibilityLabel = localized("search.next")
         btn.isEnabled = false
@@ -123,6 +128,7 @@ public final class TextSearchBar: UIStackView {
     public let resultsLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .footnote)
+        label.adjustsFontForContentSizeCategory = true
         label.isHidden = true
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -165,16 +171,18 @@ public final class TextSearchBar: UIStackView {
         nextButton.isHidden = true
         lockButton.isHidden = true
 
+        // 44pt is the floor; the button can grow if a Dynamic-Type-scaled icon
+        // needs more room.
         let side = Constants.buttonSide
         NSLayoutConstraint.activate([
-            toggleButton.widthAnchor.constraint(equalToConstant: side),
-            toggleButton.heightAnchor.constraint(equalToConstant: side),
-            prevButton.widthAnchor.constraint(equalToConstant: side),
-            prevButton.heightAnchor.constraint(equalToConstant: side),
-            nextButton.widthAnchor.constraint(equalToConstant: side),
-            nextButton.heightAnchor.constraint(equalToConstant: side),
-            lockButton.widthAnchor.constraint(equalToConstant: side),
-            lockButton.heightAnchor.constraint(equalToConstant: side),
+            toggleButton.widthAnchor.constraint(greaterThanOrEqualToConstant: side),
+            toggleButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
+            prevButton.widthAnchor.constraint(greaterThanOrEqualToConstant: side),
+            prevButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
+            nextButton.widthAnchor.constraint(greaterThanOrEqualToConstant: side),
+            nextButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
+            lockButton.widthAnchor.constraint(greaterThanOrEqualToConstant: side),
+            lockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
         ])
     }
 
@@ -339,7 +347,7 @@ public final class TextSearchBar: UIStackView {
     private func updateLockAppearance() {
         let imageName = isLocked ? "lock.fill" : "lock.open.fill"
         let tint: UIColor = isLocked ? configuration.accentColor : .secondaryLabel
-        lockButton.setImage(UIImage(systemName: imageName), for: .normal)
+        lockButton.setImage(Self.symbolImage(imageName), for: .normal)
         lockButton.tintColor = tint
         lockButton.accessibilityLabel = localized(isLocked ? "search.unlock" : "search.lock")
     }
@@ -370,7 +378,7 @@ public final class TextSearchBar: UIStackView {
                 .rotated(by: Constants.iconRotation)
             self.toggleButton.alpha = 0
         } completion: { _ in
-            self.toggleButton.setImage(UIImage(systemName: systemName), for: .normal)
+            self.toggleButton.setImage(Self.symbolImage(systemName), for: .normal)
             self.toggleButton.transform = CGAffineTransform(scaleX: 0.01, y: 0.01)
                 .rotated(by: -Constants.iconRotation)
             self.toggleButton.alpha = 1
