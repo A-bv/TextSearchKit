@@ -16,6 +16,16 @@ Search UI for `UITextView`.
 - No dependencies
 - Highlights matches without destroying existing text attributes
 
+## When to use
+
+TextSearchKit adds a small, custom find-and-highlight bar to a `UITextView`.
+It's for UIKit apps that want their **own** inline search UI — most useful on
+**iOS 13–15**, or any time you'd rather not use the system find panel.
+
+On **iOS 16+**, `UITextView` has a built-in system find bar
+([`UIFindInteraction`](https://developer.apple.com/documentation/uikit/uifindinteraction))
+— prefer that if its look suits you. In **SwiftUI**, this package isn't the right fit.
+
 ## Install
 
 Use Swift Package Manager:
