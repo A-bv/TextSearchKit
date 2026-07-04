@@ -212,6 +212,32 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)         // the bar's own spacer fills the rest
     }
 
+    func testSearchBar_rightToLeft_mirrorsControlsToLeadingEdge() {
+        // In LTR the controls pin to the trailing (right) edge and the spacer fills
+        // the left. Under a right-to-left layout the whole thing must mirror: the
+        // toggle lands at the left edge and the spacer fills the right. UIStackView
+        // does this by semantic direction as long as nothing forces LTR.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
+        container.semanticContentAttribute = .forceRightToLeft
+        let bar = TextSearchBar()
+        bar.semanticContentAttribute = .forceRightToLeft
+        bar.attach(to: UITextView())
+        container.addSubview(bar)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            bar.topAnchor.constraint(equalTo: container.topAnchor),
+            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.layoutIfNeeded()
+
+        let button = bar.arrangedSubviews.last   // toggle: sits at the trailing edge
+        let spacer = bar.arrangedSubviews.first  // spacer: fills the leading slack
+        XCTAssertEqual(button?.frame.minX ?? -1, 0, accuracy: 1)   // toggle mirrored to the left
+        XCTAssertEqual(spacer?.frame.maxX ?? 0, 320, accuracy: 1)  // spacer fills toward the right
+        XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)
+    }
+
     func testSearchBar_readOnlyTextView_keepsLockButtonHidden() {
         let bar = TextSearchBar()
         let textView = UITextView()
