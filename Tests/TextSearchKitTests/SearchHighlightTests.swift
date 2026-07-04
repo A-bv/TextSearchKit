@@ -305,6 +305,26 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertEqual(events, [true, false])
     }
 
+    func testSearchBar_controlsMeetMinimumTapTarget() {
+        // The collapsed bar lays out just the toggle button (no UISearchBar to
+        // distort the stack host-less). Every control shares the same size
+        // constant, so this guards the 44pt minimum for all of them.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
+        let bar = TextSearchBar()
+        bar.attach(to: UITextView())
+        container.addSubview(bar)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            bar.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+        ])
+        container.layoutIfNeeded()
+
+        let toggle = try! XCTUnwrap(bar.arrangedSubviews.last as? UIButton)
+        XCTAssertGreaterThanOrEqual(toggle.frame.width, 44, "control too narrow to tap")
+        XCTAssertGreaterThanOrEqual(toggle.frame.height, 44, "control too short to tap")
+    }
+
     // MARK: - TextSearchBar navigation & lock cycle
 
     /// Attaches a bar to a text view and drives its real search path for `query`,

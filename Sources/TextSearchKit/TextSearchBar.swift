@@ -40,7 +40,9 @@ public final class TextSearchBar: UIStackView {
     }
 
     private enum Constants {
-        static let buttonSide: CGFloat = 28
+        // 44pt is Apple's minimum tap target (HIG). The SF Symbol glyph keeps its
+        // own size; the extra space becomes tappable area, not a bigger icon.
+        static let buttonSide: CGFloat = 44
         static let stackSpacing: CGFloat = 4
         static let expandDuration: TimeInterval = 0.38
         static let expandDamping: CGFloat = 0.82
