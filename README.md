@@ -1,20 +1,16 @@
 # TextSearchKit
 
-[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![iOS](https://img.shields.io/badge/iOS-13%2B-blue.svg)](https://developer.apple.com/ios/)
-[![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![CI](https://github.com/A-bv/TextSearchKit/actions/workflows/ci.yml/badge.svg)](https://github.com/A-bv/TextSearchKit/actions/workflows/ci.yml)
+Search UI for `UITextView`. A drop-in find-and-highlight bar with match counting and keyboard shortcuts — no dependencies, and it highlights matches without destroying your existing text attributes.
 
-Search UI for `UITextView`.
+[![CI](https://github.com/A-bv/TextSearchKit/actions/workflows/ci.yml/badge.svg)](https://github.com/A-bv/TextSearchKit/actions/workflows/ci.yml)
+![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)
+![iOS 13+](https://img.shields.io/badge/iOS-13%2B-007AFF?logo=apple&logoColor=white)
+![SPM](https://img.shields.io/badge/SPM-compatible-success)
+[![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
 ![TextSearchKit demo](Docs/demo.gif)
 
 <sub>Rendered preview generated from the package — no system keyboard. [How it's made](Docs/demo-gif.md).</sub>
-
-- iOS 13+
-- Swift Package Manager
-- No dependencies
-- Highlights matches without destroying existing text attributes
 
 ## When to use
 
@@ -28,8 +24,13 @@ On **iOS 16+**, `UITextView` has a built-in system find bar
 
 ## Install
 
-Use Swift Package Manager:
-[A-bv/TextSearchKit.git](https://github.com/A-bv/TextSearchKit.git)
+Swift Package Manager. In Xcode, **File ▸ Add Package Dependencies…** and paste the URL:
+
+```
+https://github.com/A-bv/TextSearchKit
+```
+
+or declare it in `Package.swift`:
 
 ```swift
 .package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.3.0")
@@ -79,7 +80,7 @@ let searchBar = TextSearchBar(configuration: .init(
 ))
 ```
 
-## Keyboard Shortcuts
+## Keyboard shortcuts
 
 ```swift
 override var keyCommands: [UIKeyCommand]? {
@@ -129,7 +130,7 @@ If you only need highlighting without the bar:
   highlighted can leave stale ranges. `TextSearchBar` handles this for you by
   locking editing during search.
 
-## Building & testing
+## Build & test
 
 TextSearchKit is iOS-only (UIKit), so `swift build` / `swift test` fail on macOS
 with `no such module 'UIKit'`. Build and test against an iOS simulator instead:
@@ -143,4 +144,4 @@ Substitute any installed simulator from `xcrun simctl list devices available`.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
