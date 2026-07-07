@@ -237,6 +237,30 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)         // the bar's own spacer fills the rest
     }
 
+    func testSearchBar_expanded_searchFieldTakesTheFreedWidth() {
+        // When expanded, the spacer must collapse so the search field — not the
+        // spacer — soaks up the width. Otherwise the field lays out at zero width
+        // and the typed query is invisible.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 56))
+        let bar = TextSearchBar()
+        bar.attach(to: UITextView())
+        container.addSubview(bar)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            bar.topAnchor.constraint(equalTo: container.topAnchor),
+            bar.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+
+        bar.beginSearch()
+        container.layoutIfNeeded()
+
+        let spacer = bar.arrangedSubviews[0]
+        let searchField = bar.arrangedSubviews[1]
+        XCTAssertTrue(spacer.isHidden)                          // spacer steps aside
+        XCTAssertGreaterThan(searchField.frame.width, 100)      // field fills the freed space
+    }
+
     func testSearchBar_rightToLeft_mirrorsControlsToLeadingEdge() {
         // In LTR the controls pin to the trailing (right) edge and the spacer fills
         // the left. Under a right-to-left layout the whole thing must mirror: the

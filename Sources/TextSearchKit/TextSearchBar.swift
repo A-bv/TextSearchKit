@@ -215,6 +215,9 @@ public final class TextSearchBar: UIStackView {
         if wasEditable { revealed.append(lockButton) }
         revealed.forEach { $0.alpha = 0 }
         let animator = UIViewPropertyAnimator(duration: Constants.expandDuration, dampingRatio: Constants.expandDamping) {
+            // Collapse the spacer so the search field — not the spacer — soaks up
+            // the freed width; otherwise the field lays out at zero width.
+            self.spacer.isHidden = true
             revealed.forEach {
                 $0.isHidden = false
                 $0.alpha = 1
@@ -308,6 +311,9 @@ public final class TextSearchBar: UIStackView {
         morphIcon(to: "magnifyingglass")
 
         let animator = UIViewPropertyAnimator(duration: Constants.expandDuration, dampingRatio: Constants.expandDamping) {
+            // Bring the spacer back so the collapsed bar pins the toggle to the
+            // trailing edge again.
+            self.spacer.isHidden = false
             [self.searchField, self.prevButton, self.nextButton, self.lockButton].forEach {
                 $0.alpha = 0
                 $0.isHidden = true
