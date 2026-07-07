@@ -33,7 +33,7 @@ https://github.com/A-bv/TextSearchKit
 or declare it in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.3.0")
+.package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.3.1")
 ```
 
 ## Usage
