@@ -1,6 +1,6 @@
 # TextSearchKit
 
-Find-and-highlight for `UITextView`. `TextSearchBar` is a drop-in search bar: attach it to any text view and it highlights every match as you type, counts them, and steps through them, without disturbing the text's existing formatting.
+A drop-in find-and-highlight bar for `UITextView`. Attach `TextSearchBar` to any text view: it highlights matches as you type, counts them, and steps through them, without touching your existing text formatting. No dependencies.
 
 [![CI](https://github.com/A-bv/TextSearchKit/actions/workflows/ci.yml/badge.svg)](https://github.com/A-bv/TextSearchKit/actions/workflows/ci.yml)
 ![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)
@@ -8,25 +8,23 @@ Find-and-highlight for `UITextView`. `TextSearchBar` is a drop-in search bar: at
 ![SPM](https://img.shields.io/badge/SPM-compatible-success)
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
-Start a search from the magnifying-glass button or in code. The bar expands into a search field, matches highlight live as you type, and a counter shows the current position. Step through matches with the on-screen chevrons or keyboard shortcuts. Editing pauses while searching and is restored when you close. Every action is available programmatically too.
-
 <p align="center">
-  <img src=".github/demo.gif" alt="Typing a query in a text view and stepping through the highlighted matches" width="380">
+  <img src=".github/demo.gif" alt="Typing a query and stepping through highlighted matches" width="380">
 </p>
 
 ## Why this exists
 
-iOS 16 added a built-in find bar for `UITextView` ([`UIFindInteraction`](https://developer.apple.com/documentation/uikit/uifindinteraction)). TextSearchKit predates it. It is the in-app search that shipped inside an older app, extracted into its own package rather than deleted, so projects that still target **iOS 13 to 15** keep a working find-and-highlight bar for versions that have no native equivalent. On **iOS 16+**, prefer the system find bar unless you want this one's look. In **SwiftUI**, this package is not the right fit.
+iOS 16 added a built-in find bar for `UITextView` ([`UIFindInteraction`](https://developer.apple.com/documentation/uikit/uifindinteraction)). TextSearchKit predates it: it is in-app search extracted from an older app rather than deleted, kept for projects still targeting **iOS 13 to 15**, which have no native equivalent. On iOS 16+, prefer the system find bar.
 
 ## Install
 
-Swift Package Manager. In Xcode, **File ▸ Add Package Dependencies…** and paste the URL:
+Swift Package Manager. In Xcode, **File ▸ Add Package Dependencies…** with:
 
 ```
 https://github.com/A-bv/TextSearchKit
 ```
 
-or declare it in `Package.swift`:
+or in `Package.swift`:
 
 ```swift
 .package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.3.1")
@@ -34,7 +32,7 @@ or declare it in `Package.swift`:
 
 ## Usage
 
-`TextSearchBar` is a `UIStackView`. Create one, attach it to your text view, and place it (with its results label) in your layout.
+Attach the bar to your text view and place it, with its results label, in your layout.
 
 ```swift
 import UIKit
@@ -46,7 +44,6 @@ final class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         searchBar.attach(to: textView)
 
         let stack = UIStackView(arrangedSubviews: [searchBar, textView, searchBar.resultsLabel])
@@ -64,29 +61,23 @@ final class ViewController: UIViewController {
 }
 ```
 
-The bar starts collapsed as a magnifying-glass button and expands when tapped. To drive it in code, call `beginSearch()` and `endSearch()`, for example from a navigation-bar button. `onActiveChange` fires with `true` when search opens and `false` when it closes.
+The bar starts as a magnifying-glass button and expands when tapped. Drive it in code with `beginSearch()` and `endSearch()`; `onActiveChange` fires when search opens and closes.
 
 ### Keyboard shortcuts
 
-Expose the built-in key commands from your view controller:
-
 ```swift
-override var keyCommands: [UIKeyCommand]? {
-    searchBar.searchKeyCommands
-}
+override var keyCommands: [UIKeyCommand]? { searchBar.searchKeyCommands }
 ```
 
-- `Cmd+F` opens search
-- `Cmd+G` next match
-- `Cmd+Shift+G` previous match
+`Cmd+F` opens search, `Cmd+G` and `Cmd+Shift+G` step forward and back.
 
 ### Highlight without the bar
 
-The matching engine is a `UITextView` extension you can use on its own:
+The engine is a `UITextView` extension you can use on its own:
 
 ```swift
 textView.highlight(query: "swift")     // highlight every match, returns the ranges
-textView.matchPositions(for: "swift")  // every case-insensitive match
+textView.matchPositions(for: "swift")
 textView.scrollToFirstMatch(of: "swift")
 ```
 
@@ -100,44 +91,23 @@ let searchBar = TextSearchBar(configuration: .init(
 ))
 ```
 
-The accent color tints the buttons and the match highlight.
-
-## Localization
-
-The built-in strings (accessibility labels, key-command titles, the "X of Y" counter) are resolved through the package bundle. English ships by default; add an `<lang>.lproj/Localizable.strings` to your app to provide more languages.
+The accent color tints the buttons and the highlight.
 
 ## Behavior
 
-- **Matching is literal and case-insensitive.** Special characters match verbatim, not as a regex, and a whitespace-only query highlights nothing.
-- **Your formatting is kept.** Fonts, colors, and links stay put under a highlight, and clearing the search (an empty query) restores the original styling exactly.
-- **Editing pauses while searching.** The text view is made non-editable during a search and its previous state is restored on close, so a read-only text view stays read-only.
-- **The active match scrolls into view** as you step through, without jumping your layout.
+- Matching is literal and case-insensitive; a whitespace-only query highlights nothing.
+- Your formatting is kept: fonts, colors, and links survive a highlight and are restored when the search clears.
+- Editing pauses during a search and is restored on close, so a read-only text view stays read-only.
 
 ## Accessibility
 
-- Every control meets the 44pt minimum tap target.
-- Controls and the counter scale with Dynamic Type.
-- VoiceOver announces the "X of Y" position as you move between matches.
+- 44pt minimum tap targets, and controls scale with Dynamic Type.
+- VoiceOver announces the "X of Y" position as you step through matches.
 - Right-to-left layouts mirror correctly.
 
-## Implementation
+## Localization
 
-The matching engine lives in a `UITextView` extension, separate from the bar, so you can highlight text without the UI. Highlights are written to the text view's storage and back up the original styling first, so they restore exactly when cleared. The bar is `@MainActor` throughout, and the package builds clean under Swift 6 strict concurrency with no dependencies.
-
-## Layout
-
-```text
-Package.swift     ┐
-Sources/          │  the package: what SPM builds and ships
-Tests/            ┘
-
-README.md         ┐
-LICENSE           ┘  essential docs, kept at root by convention
-
-.gitignore           tooling config
-
-.github/          CI workflow and demo GIF
-```
+Built-in strings ship in English; add an `<lang>.lproj/Localizable.strings` to your app for more languages.
 
 ## License
 
