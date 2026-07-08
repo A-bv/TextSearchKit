@@ -13,12 +13,6 @@
 /* Accessibility label for the next-match button. */
 "search.next" = "Next match";
 
-/* Accessibility label for the lock button when editing is locked (tapping unlocks). */
-"search.unlock" = "Unlock editing";
-
-/* Accessibility label for the lock button when editing is unlocked (tapping locks). */
-"search.lock" = "Lock editing";
-
 /* Key command discoverability title to open search. */
 "search.command.find" = "Find";
 

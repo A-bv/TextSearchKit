@@ -106,14 +106,6 @@ public final class TextSearchBar: UIStackView {
         return btn
     }()
 
-    private lazy var lockButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.accessibilityLabel = localized("search.lock")
-        btn.addTarget(self, action: #selector(toggleLock), for: .touchUpInside)
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        return btn
-    }()
-
     // Fills the leading slack so the bar's controls sit at the trailing edge.
     // This is what lets the collapsed 🔍 expand leftward inside any full-width
     // container, so callers don't have to add a spacer of their own.
@@ -136,7 +128,6 @@ public final class TextSearchBar: UIStackView {
 
     private weak var textView: UITextView?
     private var isActive = false
-    private var isLocked = true
     /// The text view's `isEditable` before search began, so closing search restores
     /// it instead of unconditionally re-enabling editing on a read-only text view.
     private var wasEditable = true
@@ -157,7 +148,7 @@ public final class TextSearchBar: UIStackView {
 
         // spacer is leftmost, toggleButton rightmost: the bar keeps its controls
         // at the trailing edge and grows leftward as it expands.
-        [spacer, searchField, prevButton, nextButton, lockButton, toggleButton].forEach(addArrangedSubview)
+        [spacer, searchField, prevButton, nextButton, toggleButton].forEach(addArrangedSubview)
         searchField.delegate = self
         // While expanded, the search field (not the spacer) should soak up width.
         searchField.setContentHuggingPriority(
@@ -169,7 +160,6 @@ public final class TextSearchBar: UIStackView {
         searchField.isHidden = true
         prevButton.isHidden = true
         nextButton.isHidden = true
-        lockButton.isHidden = true
 
         // 44pt is the floor; the button can grow if a Dynamic-Type-scaled icon
         // needs more room.
@@ -181,8 +171,6 @@ public final class TextSearchBar: UIStackView {
             prevButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
             nextButton.widthAnchor.constraint(greaterThanOrEqualToConstant: side),
             nextButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
-            lockButton.widthAnchor.constraint(greaterThanOrEqualToConstant: side),
-            lockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: side),
         ])
     }
 
@@ -201,18 +189,13 @@ public final class TextSearchBar: UIStackView {
     @objc public func beginSearch() {
         guard !isActive else { return }
         isActive = true
-        isLocked = true
-        updateLockAppearance()
         wasEditable = textView?.isEditable ?? true
         textView?.isEditable = false
         toggleButton.accessibilityLabel = localized("search.close")
 
         morphIcon(to: "xmark.circle.fill")
 
-        // The lock button turns editing on, so it only makes sense for an
-        // editable text view. Keep it hidden for read-only ones.
-        var revealed: [UIView] = [searchField, prevButton, nextButton]
-        if wasEditable { revealed.append(lockButton) }
+        let revealed: [UIView] = [searchField, prevButton, nextButton]
         revealed.forEach { $0.alpha = 0 }
         let animator = UIViewPropertyAnimator(duration: Constants.expandDuration, dampingRatio: Constants.expandDamping) {
             // Collapse the spacer so the search field — not the spacer — soaks up
@@ -263,8 +246,7 @@ public final class TextSearchBar: UIStackView {
     }
 
     /// Runs the search for `query` against the current text: highlights matches,
-    /// records them, and moves to the first one. Shared by live typing and by
-    /// re-locking after an edit.
+    /// records them, and moves to the first one.
     private func runSearch(query: String) {
         guard let textView else { return }
         currentMatchIndex = 0
@@ -303,8 +285,6 @@ public final class TextSearchBar: UIStackView {
         searchField.text = ""
         textView?.highlight(query: "", color: configuration.accentColor)
         textView?.isEditable = wasEditable
-        isLocked = true
-        updateLockAppearance()
         resultsLabel.isHidden = true
         toggleButton.accessibilityLabel = localized("search.open")
 
@@ -314,48 +294,19 @@ public final class TextSearchBar: UIStackView {
             // Bring the spacer back so the collapsed bar pins the toggle to the
             // trailing edge again.
             self.spacer.isHidden = false
-            [self.searchField, self.prevButton, self.nextButton, self.lockButton].forEach {
+            [self.searchField, self.prevButton, self.nextButton].forEach {
                 $0.alpha = 0
                 $0.isHidden = true
             }
             self.layoutIfNeeded()
         }
         animator.addCompletion { _ in
-            [self.searchField, self.prevButton, self.nextButton, self.lockButton].forEach { $0.alpha = 1 }
+            [self.searchField, self.prevButton, self.nextButton].forEach { $0.alpha = 1 }
         }
         animator.startAnimation()
 
         onActiveChange?(false)
         window?.endEditing(true)
-    }
-
-    // Internal (not private) so tests can drive the lock cycle via @testable.
-    @objc func toggleLock() {
-        isLocked.toggle()
-        updateLockAppearance()
-        if isLocked {
-            textView?.isEditable = false
-            // Re-run the search so matches and highlights match the edited text.
-            runSearch(query: searchField.text ?? "")
-            searchField.becomeFirstResponder()
-        } else {
-            // Clear highlights so typed text can't pick up their colors.
-            textView?.highlight(query: "", color: configuration.accentColor)
-            currentMatches = []
-            currentMatchIndex = 0
-            updateResultsLabel()
-            textView?.isEditable = true
-            window?.endEditing(true)
-            textView?.becomeFirstResponder()
-        }
-    }
-
-    private func updateLockAppearance() {
-        let imageName = isLocked ? "lock.fill" : "lock.open.fill"
-        let tint: UIColor = isLocked ? configuration.accentColor : .secondaryLabel
-        lockButton.setImage(Self.symbolImage(imageName), for: .normal)
-        lockButton.tintColor = tint
-        lockButton.accessibilityLabel = localized(isLocked ? "search.unlock" : "search.lock")
     }
 
     private func updateResultsLabel() {
@@ -409,8 +360,6 @@ extension TextSearchBar: UISearchBarDelegate {
     }
 
     public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        isLocked = true
-        updateLockAppearance()
         textView?.isEditable = false
     }
 

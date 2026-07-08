@@ -287,19 +287,6 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)
     }
 
-    func testSearchBar_readOnlyTextView_keepsLockButtonHidden() {
-        let bar = TextSearchBar()
-        let textView = UITextView()
-        textView.isEditable = false
-        bar.attach(to: textView)
-
-        bar.beginSearch()
-
-        // arrangedSubviews: [spacer, searchField, prev, next, lock, toggle]
-        let lockButton = bar.arrangedSubviews[bar.arrangedSubviews.count - 2]
-        XCTAssertTrue(lockButton.isHidden)
-    }
-
     func testSearchBar_resolvesLocalizedStringsFromBundle() {
         // If the resource bundle is misconfigured, NSLocalizedString returns the
         // raw key ("search.open") instead of the resolved text.
@@ -316,7 +303,7 @@ final class SearchHighlightTests: XCTestCase {
 
         bar.beginSearch()
 
-        XCTAssertFalse(textView.isEditable) // editing is locked during search
+        XCTAssertFalse(textView.isEditable) // editing is disabled during search
     }
 
     func testSearchBar_endSearch_restoresReadOnlyTextView() {
@@ -400,7 +387,7 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(toggle.frame.height, 44, "control too short to tap")
     }
 
-    // MARK: - TextSearchBar navigation & lock cycle
+    // MARK: - TextSearchBar navigation
 
     /// Attaches a bar to a text view and drives its real search path for `query`,
     /// returning the pieces a test needs. `field` is the bar's own search bar, so
@@ -425,15 +412,6 @@ final class SearchHighlightTests: XCTestCase {
         var alpha: CGFloat = 0
         color.getRed(nil, green: nil, blue: nil, alpha: &alpha)
         return alpha
-    }
-
-    private func highlightedRangeCount(in textView: UITextView) -> Int {
-        var count = 0
-        textView.attributedText.enumerateAttribute(
-            .backgroundColor,
-            in: NSRange(location: 0, length: textView.attributedText.length)
-        ) { value, _, _ in if value != nil { count += 1 } }
-        return count
     }
 
     func testSearchBar_nextMatch_advancesWrapsAndMovesActiveHighlight() {
@@ -472,20 +450,4 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertEqual(next?.isEnabled, false)
     }
 
-    func testSearchBar_unlockClearsHighlights_relockReappliesSearch() {
-        let (bar, textView, _) = startSearch(text: "cat cat", query: "cat")
-        XCTAssertEqual(bar.resultsLabel.text, "1 of 2")
-        XCTAssertFalse(textView.isEditable)              // locked while searching
-        XCTAssertEqual(highlightedRangeCount(in: textView), 2)
-
-        bar.toggleLock()                                 // unlock -> edit
-        XCTAssertTrue(textView.isEditable)
-        XCTAssertEqual(highlightedRangeCount(in: textView), 0) // highlights cleared for editing
-        XCTAssertTrue(bar.resultsLabel.isHidden)
-
-        bar.toggleLock()                                 // lock -> search again
-        XCTAssertFalse(textView.isEditable)
-        XCTAssertEqual(highlightedRangeCount(in: textView), 2) // re-applied against current text
-        XCTAssertEqual(bar.resultsLabel.text, "1 of 2")
-    }
 }
