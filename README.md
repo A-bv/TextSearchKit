@@ -14,7 +14,7 @@ A drop-in find-and-highlight bar for `UITextView`. Attach `TextSearchBar` to any
 
 ## Why this exists
 
-iOS 16 added a built-in find bar for `UITextView` ([`UIFindInteraction`](https://developer.apple.com/documentation/uikit/uifindinteraction)). TextSearchKit predates it: it is in-app search extracted from an older app rather than deleted, kept for projects still targeting **iOS 13 to 15**, which have no native equivalent. On iOS 16+, prefer the system find bar.
+TextSearchKit lets users search text in a `UITextView` on **iOS 15 and below**, where there is no native option: a built-in find bar only arrived with iOS 16 ([`UIFindInteraction`](https://developer.apple.com/documentation/uikit/uifindinteraction)). It was extracted from an older app and kept rather than deleted, so projects on those targets still have it.
 
 ## Install
 
@@ -22,12 +22,6 @@ Swift Package Manager. In Xcode, **File ▸ Add Package Dependencies…** with:
 
 ```
 https://github.com/A-bv/TextSearchKit
-```
-
-or in `Package.swift`:
-
-```swift
-.package(url: "https://github.com/A-bv/TextSearchKit.git", from: "1.3.1")
 ```
 
 ## Usage
@@ -61,7 +55,7 @@ final class ViewController: UIViewController {
 }
 ```
 
-The bar starts as a magnifying-glass button and expands when tapped. Drive it in code with `beginSearch()` and `endSearch()`; `onActiveChange` fires when search opens and closes.
+Tap the magnifying-glass button to expand the search bar, search for any word, navigate matches with the arrows, then collapse it back to the button. You can also open and close it in code with `beginSearch()` and `endSearch()`.
 
 ### Keyboard shortcuts
 
