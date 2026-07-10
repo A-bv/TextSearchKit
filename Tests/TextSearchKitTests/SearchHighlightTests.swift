@@ -288,6 +288,33 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertGreaterThan(spacer?.frame.width ?? 0, 0)
     }
 
+    func testSearchBar_search_runsQueryFromCode() {
+        let bar = TextSearchBar()
+        let textView = UITextView()
+        textView.text = "cat cat cat"
+        bar.attach(to: textView)
+
+        func highlightCount() -> Int {
+            var count = 0
+            textView.attributedText.enumerateAttribute(
+                .backgroundColor,
+                in: NSRange(location: 0, length: textView.attributedText.length)
+            ) { value, _, _ in if value != nil { count += 1 } }
+            return count
+        }
+
+        bar.search("cat")
+
+        XCTAssertEqual(bar.resultsLabel.text, "1 of 3")
+        let field = bar.arrangedSubviews[1] as? UISearchBar
+        XCTAssertEqual(field?.text, "cat")   // field reflects the query
+        XCTAssertEqual(highlightCount(), 3)
+
+        bar.search("dog")                    // a follow-up query updates in place
+        XCTAssertTrue(bar.resultsLabel.isHidden) // no match -> counter hidden
+        XCTAssertEqual(highlightCount(), 0)
+    }
+
     func testSearchBar_resolvesLocalizedStringsFromBundle() {
         // If the resource bundle is misconfigured, NSLocalizedString returns the
         // raw key ("search.open") instead of the resolved text.

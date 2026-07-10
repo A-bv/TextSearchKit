@@ -216,6 +216,15 @@ public final class TextSearchBar: UIStackView {
         onActiveChange?(true)
     }
 
+    /// Run a search for `query` from code: expands the bar if it isn't already,
+    /// fills the search field, highlights every match, and moves to the first one.
+    /// An empty `query` clears the current search.
+    public func search(_ query: String) {
+        if !isActive { beginSearch() }
+        searchField.text = query
+        runSearch(query: query)
+    }
+
     // MARK: - Navigation
 
     /// Key commands to include in your view controller's `keyCommands`.

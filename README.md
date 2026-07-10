@@ -55,7 +55,7 @@ final class ViewController: UIViewController {
 }
 ```
 
-Tap the magnifying-glass button to expand the search bar, search for any word, navigate matches with the arrows, then collapse it back to the button. You can also open and close it in code with `beginSearch()` and `endSearch()`.
+Tap the magnifying-glass button to expand the search bar, search for any word, navigate matches with the arrows, then collapse it back to the button. You can also drive it in code: `search("term")` runs a query, and `beginSearch()` / `endSearch()` open and close the bar.
 
 ### Keyboard shortcuts
 
