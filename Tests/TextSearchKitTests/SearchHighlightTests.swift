@@ -201,18 +201,19 @@ final class SearchHighlightTests: XCTestCase {
         XCTAssertNotNil(attrs[.backgroundColor])
     }
 
-    func testHighlight_picksDarkTextOnLightAccent() {
+    func testHighlight_picksForegroundByWCAGContrast() {
         let textView = UITextView()
         textView.text = "abc"
 
-        textView.highlight(query: "abc", color: .systemYellow)
-        let light = textView.attributedText.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
+        func foreground(on color: UIColor) -> UIColor? {
+            textView.highlight(query: "abc", color: color)
+            return textView.attributedText.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
+        }
 
-        textView.highlight(query: "abc", color: .systemBlue)
-        let dark = textView.attributedText.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
-
-        XCTAssertEqual(light, .black)
-        XCTAssertEqual(dark, .white)
+        XCTAssertEqual(foreground(on: .systemYellow), .black) // light background -> dark text
+        XCTAssertEqual(foreground(on: .black), .white)        // dark background -> light text
+        // On systemBlue, white text is only ~4.0:1 (fails WCAG AA); black is ~5.2:1 and passes.
+        XCTAssertEqual(foreground(on: .systemBlue), .black)
     }
 
     // MARK: - TextSearchBar

@@ -131,11 +131,18 @@ extension UITextView {
 }
 
 private extension UIColor {
-    /// Black or white — whichever stays legible drawn on top of the receiver.
+    /// Black or white — whichever has the higher WCAG contrast ratio on the receiver.
     var readableForegroundColor: UIColor {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
-        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
-        return luminance > 0.6 ? .black : .white
+        // WCAG relative luminance: expand each sRGB channel to linear light, then weight.
+        func linear(_ c: CGFloat) -> Double {
+            let c = Double(c)
+            return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+        }
+        let luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
+        // 0.179 is the luminance where black and white give equal contrast; above it,
+        // black is the more readable (higher-contrast) choice.
+        return luminance > 0.179 ? .black : .white
     }
 }
