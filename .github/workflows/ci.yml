@@ -8,6 +8,16 @@ on:
 jobs:
   test:
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Run the suite on the newest and oldest iOS runtimes the runner provides,
+        # so a version-specific regression is caught instead of testing a single OS.
+        # Hosted runners don't ship iOS 13-15 simulators, so this can't run on the
+        # literal floor; the iOS 13 API floor is enforced at compile time by the
+        # package's platforms setting.
+        runtime: [newest, oldest]
+    name: test (${{ matrix.runtime }} iOS)
 
     steps:
       - uses: actions/checkout@v5
@@ -17,20 +27,23 @@ jobs:
 
       - name: Pick a simulator
         id: sim
+        env:
+          RUNTIME: ${{ matrix.runtime }}
         run: |
           UDID=$(xcrun simctl list devices available --json \
-            | python3 -c "import sys, json; ds=json.load(sys.stdin)['devices']; \
+            | python3 -c "import sys, json, os; ds=json.load(sys.stdin)['devices']; \
               cands=[d for rt in sorted(ds) if 'iOS' in rt for d in ds[rt] if d.get('isAvailable') and 'iPhone' in d['name']]; \
-              print(cands[-1]['udid'] if cands else '')")
+              print(cands[-1 if os.environ['RUNTIME']=='newest' else 0]['udid'] if cands else '')")
           if [ -z "$UDID" ]; then echo "No iOS simulator available" >&2; exit 1; fi
+          echo "Picked $RUNTIME iOS simulator: $UDID"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
       - name: Test
         run: xcodebuild test -scheme TextSearchKit -destination "id=${{ steps.sim.outputs.udid }}"
 
-      # The package ships a Swift 5.9 floor (broad consumer compatibility), but the
-      # code is written to be clean under Swift 6's strict concurrency checking.
-      # This compiles the library and tests in Swift 6 language mode so any future
-      # concurrency regression fails here as a hard error — without raising the floor.
+      # The package ships a Swift 5.9 floor, but the code is written clean under
+      # Swift 6's strict concurrency. Compile in Swift 6 mode so any regression
+      # fails here — without raising the floor. Once is enough, so newest only.
       - name: Compile under Swift 6 language mode
+        if: matrix.runtime == 'newest'
         run: xcodebuild build-for-testing -scheme TextSearchKit -destination "id=${{ steps.sim.outputs.udid }}" SWIFT_VERSION=6
